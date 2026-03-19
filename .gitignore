@@ -1,0 +1,9 @@
+uni-app/dist/
+uni-app/node_modules/
+uni-app/.DS_Store
+uni-app/.idea/
+uni-app/.vscode/
+uni-app/.git/
+uni-app/.gitignore
+uni-app/.npm/
+uni-app/.yarn/

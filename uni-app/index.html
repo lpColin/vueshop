@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      ;(function () {
+        var rawAssign = Object.assign
+        Object.assign = function (target) {
+          var sources = Array.prototype.slice.call(arguments, 1)
+          try {
+            return rawAssign.apply(Object, [target].concat(sources))
+          } catch (error) {
+            var msg = String(error && error.message ? error.message : '')
+            if (msg.indexOf("read only property '_'") === -1) {
+              throw error
+            }
+
+            var safeSources = sources.map(function (src) {
+              if (!src || typeof src !== 'object' || !Object.prototype.hasOwnProperty.call(src, '_')) {
+                return src
+              }
+              var cloned = {}
+              for (var k in src) {
+                if (Object.prototype.hasOwnProperty.call(src, k) && k !== '_') {
+                  cloned[k] = src[k]
+                }
+              }
+              return cloned
+            })
+
+            return rawAssign.apply(Object, [target].concat(safeSources))
+          }
+        }
+      })()
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>鲜果多商城</title>
+    <!--preload-links-->
+    <!--app-context-->
+  </head>
+  <body>
+    <div id="app">
+      <!--app-html-->
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

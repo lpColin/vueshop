@@ -1,0 +1,74 @@
+# .gitignore for .NET Core API
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.suo.user
+*.userosscache.user
+*.DotSettings.user
+*.resharper
+*.vspscc
+*.vssscc
+._*
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Database files (SQLite)
+*.db-shm
+*.db-wal
+
+# Backup files
+backups/
+*.backup
+*.bak
+
+# User-specific files
+appsettings.Development.local.json
+secrets.json
+
+# NuGet packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Publish output
+publish/
+*.pubxml
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Entity Framework Migrations (keep the folder, ignore specific files if needed)
+# Migrations/ - Uncomment if you don't want to track migrations
+# But usually you SHOULD track migrations in Git
