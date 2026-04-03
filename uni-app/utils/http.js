@@ -1,6 +1,6 @@
 import { getToken, logout } from './auth'
 
-const BASE_URL = 'http://192.168.1.21:5162'
+const BASE_URL = 'http://localhost:5162'
 
 function getCurrentRoute() {
   const pages = getCurrentPages()

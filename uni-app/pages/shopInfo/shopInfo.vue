@@ -80,9 +80,9 @@ export default {
       if (!path) return ''
       if (path.startsWith('http://') || path.startsWith('https://')) return path
       if (path.startsWith('/')) {
-        return 'http://192.168.1.21:5162' + path
+        return 'http://localhost:5162' + path
       }
-      return 'http://192.168.1.21:5162/' + path
+      return 'http://localhost:5162/' + path
     },
     getStars(rating) {
       const fullStars = Math.floor(rating)

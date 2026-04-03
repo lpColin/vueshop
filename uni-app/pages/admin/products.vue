@@ -238,7 +238,7 @@ export default {
         images: [],
         status: 1
       },
-      apiBaseUrl: 'http://192.168.1.21:5162',
+      apiBaseUrl: 'http://localhost:5162',
       categoryList: [],
       categoryIndex: 0,
       // 筛选相关

@@ -1,231 +1,428 @@
-<template>
+﻿<template>
   <view class="page">
-    <view class="page-bar">
-      <button size="mini" @tap="goAdminHome">返回看板</button>
-      <button size="mini" @tap="goUserCenter">个人中心</button>
-    </view>
-    
-    <!-- 筛选框 -->
-    <view class="search-bar">
-      <view class="search-input">
-        <input 
-          class="input" 
-          v-model="searchKeyword" 
-          placeholder="请输入店铺名称"
-          confirm-type="search"
-          @confirm="handleSearch"
-        />
-        <text class="search-icon" @tap="handleSearch">🔍</text>
+    <!-- 椤甸潰澶撮儴 -->
+    <view class="page-header">
+      <view class="header-left">
+        <text class="page-title">搴楅摵绠＄悊</text>
+        <text class="page-subtitle">绠＄悊鎵€鏈夊叆椹诲晢瀹跺簵閾轰俊鎭?/text>
       </view>
-      
-      <view class="search-select">
-        <picker 
-          :range="statusOptions" 
-          :value="statusIndex"
-          @change="onStatusChange"
-        >
-          <view class="picker">
-            <text>{{ statusOptions[statusIndex] }}</text>
+      <view class="header-right">
+        <button class="btn-back" @tap="goAdminHome">
+          <text class="btn-icon">鈫?/text>
+          杩斿洖鐪嬫澘
+        </button>
+        <button class="btn-user" @tap="goUserCenter">
+          <text class="btn-icon">馃懁</text>
+          涓汉涓績
+        </button>
+      </view>
+    </view>
+
+    <!-- 缁熻鍗＄墖 -->
+    <view class="stats-row">
+      <view class="stat-card stat-total">
+        <view class="stat-icon">馃彧</view>
+        <view class="stat-info">
+          <text class="stat-value">{{ total }}</text>
+          <text class="stat-label">搴楅摵鎬绘暟</text>
+        </view>
+      </view>
+      <view class="stat-card stat-open">
+        <view class="stat-icon">鉁?/view>
+        <view class="stat-info">
+          <text class="stat-value">{{ openCount }}</text>
+          <text class="stat-label">钀ヤ笟涓?/text>
+        </view>
+      </view>
+      <view class="stat-card stat-closed">
+        <view class="stat-icon">馃寵</view>
+        <view class="stat-info">
+          <text class="stat-value">{{ closedCount }}</text>
+          <text class="stat-label">宸叉墦鐑?/text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 绛涢€夊伐鍏锋爮 -->
+    <view class="toolbar">
+      <view class="toolbar-left">
+        <view class="search-box">
+          <text class="search-icon">馃攳</text>
+          <input 
+            class="search-input" 
+            v-model="searchKeyword" 
+            placeholder="鎼滅储搴楅摵鍚嶇О..."
+            confirm-type="search"
+            @confirm="handleSearch"
+          />
+          <text class="search-clear" v-if="searchKeyword" @tap="clearSearch">鉁?/text>
+        </view>
+        
+        <view class="filter-group">
+          <view class="filter-label">鐘舵€侊細</view>
+          <view class="filter-options">
+            <view 
+              :class="['filter-option', statusIndex === 0 ? 'active' : '']"
+              @tap="selectStatus(0)"
+            >
+              鍏ㄩ儴
+            </view>
+            <view 
+              :class="['filter-option', statusIndex === 1 ? 'active' : '']"
+              @tap="selectStatus(1)"
+            >
+              钀ヤ笟涓?            </view>
+            <view 
+              :class="['filter-option', statusIndex === 2 ? 'active' : '']"
+              @tap="selectStatus(2)"
+            >
+              宸叉墦鐑?            </view>
           </view>
-        </picker>
-      </view>
-      
-      <button size="mini" class="btn-reset" @tap="resetSearch">重置</button>
-    </view>
-    
-    <!-- 店铺列表 -->
-    <view class="table-container">
-      <view class="table-header">
-        <view class="table-row header-row">
-          <view class="table-cell">序号</view>
-          <view class="table-cell">店铺名称</view>
-          <view class="table-cell">头像</view>
-          <view class="table-cell">评分</view>
-          <view class="table-cell">联系电话</view>
-          <view class="table-cell">状态</view>
-          <view class="table-cell">操作</view>
         </view>
       </view>
       
-      <view class="table-body">
-        <view 
-          v-for="(item, index) in list" 
-          :key="item.id" 
-          class="table-row"
-        >
-          <view class="table-cell">{{ (page - 1) * pageSize + index + 1 }}</view>
-          <view class="table-cell cell-text-ellipsis">{{ item.name }}</view>
-          <view class="table-cell">
-            <image 
-              v-if="item.avatar" 
-              :src="getFullImageUrl(item.avatar)" 
-              mode="aspectFill"
-              class="shop-avatar"
-              @tap="previewAvatar(index)"
-            />
-            <text v-else class="no-image">无图</text>
+      <view class="toolbar-right">
+        <button class="btn-reset" @tap="resetSearch">
+          <text class="btn-icon">馃攧</text>
+          閲嶇疆
+        </button>
+        <button class="btn-add" @tap="handleAdd">
+          <text class="btn-icon">+</text>
+          鏂板搴楅摵
+        </button>
+      </view>
+    </view>
+
+    <!-- 鏁版嵁琛ㄦ牸 -->
+    <view class="table-wrapper">
+      <view class="table-container">
+        <view class="table-header">
+          <view class="table-row">
+            <view class="table-cell cell-checkbox">
+              <view class="checkbox" :class="{checked: allSelected}" @tap="toggleSelectAll"></view>
+            </view>
+            <view class="table-cell cell-id">ID</view>
+            <view class="table-cell cell-shop">搴楅摵淇℃伅</view>
+            <view class="table-cell cell-rating">璇勫垎</view>
+            <view class="table-cell cell-phone">鑱旂郴鐢佃瘽</view>
+            <view class="table-cell cell-status">鐘舵€?/view>
+            <view class="table-cell cell-actions">鎿嶄綔</view>
           </view>
-          <view class="table-cell">⭐{{ Number(item.rating || 5).toFixed(1) }}</view>
-          <view class="table-cell">{{ item.phone || '-' }}</view>
-          <view class="table-cell">
-            <text :class="['status-tag', item.status === 1 ? 'status-open' : 'status-closed']">
-              {{ item.status === 1 ? '营业' : '打烊' }}
-            </text>
-          </view>
-          <view class="table-cell">
-            <view class="action-buttons">
-              <button size="mini" class="btn-edit" @tap="handleEdit(item)">编辑</button>
-              <button size="mini" class="btn-delete" @tap="handleDelete(item)">删除</button>
+        </view>
+        
+        <view class="table-body">
+          <view 
+            v-for="(item, index) in list" 
+            :key="item.id" 
+            class="table-row"
+            :class="{highlighted: selectedIds.includes(item.id)}"
+          >
+            <view class="table-cell cell-checkbox">
+              <view 
+                class="checkbox" 
+                :class="{checked: selectedIds.includes(item.id)}"
+                @tap="toggleSelect(item.id)"
+              ></view>
+            </view>
+            <view class="table-cell cell-id">#{{ item.id }}</view>
+            <view class="table-cell cell-shop">
+              <view class="shop-info">
+                <image 
+                  v-if="item.avatar" 
+                  :src="getFullImageUrl(item.avatar)" 
+                  mode="aspectFill"
+                  class="shop-avatar"
+                  @tap="previewAvatar(index)"
+                />
+                <view class="shop-avatar-placeholder" v-else>
+                  <text>搴?/text>
+                </view>
+                <view class="shop-details">
+                  <text class="shop-name">{{ item.name }}</text>
+                  <text class="shop-desc" v-if="item.description">{{ item.description }}</text>
+                </view>
+              </view>
+            </view>
+            <view class="table-cell cell-rating">
+              <view class="rating-stars">
+                <text class="star-icon" v-for="i in 5" :key="i">{{ i <= Math.round(item.rating || 5) ? '猸? : '鈽? }}</text>
+                <text class="rating-value">{{ Number(item.rating || 5).toFixed(1) }}</text>
+              </view>
+            </view>
+            <view class="table-cell cell-phone">{{ item.phone || '-' }}</view>
+            <view class="table-cell cell-status">
+              <view :class="['status-badge', item.status === 1 ? 'status-open' : 'status-closed']">
+                <view class="status-dot"></view>
+                {{ item.status === 1 ? '钀ヤ笟涓? : '宸叉墦鐑? }}
+              </view>
+            </view>
+            <view class="table-cell cell-actions">
+              <view class="action-btns">
+                <button class="btn-action btn-view" @tap="handleView(item)" title="鏌ョ湅">
+                  <text>馃憗</text>
+                </button>
+                <button class="btn-action btn-edit" @tap="handleEdit(item)" title="缂栬緫">
+                  <text>鉁?/text>
+                </button>
+                <button class="btn-action btn-delete" @tap="handleDelete(item)" title="鍒犻櫎">
+                  <text>馃棏</text>
+                </button>
+              </view>
             </view>
           </view>
         </view>
+        
+        <!-- 绌虹姸鎬?-->
+        <view v-if="list.length === 0" class="empty-state">
+          <view class="empty-icon">馃摥</view>
+          <view class="empty-text">鏆傛棤搴楅摵鏁版嵁</view>
+          <button class="btn-add-empty" @tap="handleAdd">绔嬪嵆娣诲姞</button>
+        </view>
+      </view>
+      
+      <!-- 鍒嗛〉 -->
+      <view class="pagination">
+        <view class="pagination-info">
+          鍏?{{ total }} 鏉℃暟鎹紝姣忛〉 {{ pageSize }} 鏉?        </view>
+        <view class="pagination-controls">
+          <button 
+            class="btn-page" 
+            :disabled="page <= 1" 
+            @tap="prevPage"
+          >
+            <text>鈥?/text> 涓婁竴椤?          </button>
+          <view class="page-numbers">
+            <view 
+              v-for="p in visiblePages" 
+              :key="p"
+              :class="['page-number', p === page ? 'active' : '']"
+              @tap="goToPage(p)"
+            >
+              {{ p }}
+            </view>
+          </view>
+          <button 
+            class="btn-page" 
+            :disabled="page >= totalPages" 
+            @tap="nextPage"
+          >
+            涓嬩竴椤?<text>鈥?/text>
+          </button>
+        </view>
       </view>
     </view>
 
-    <!-- 分页 -->
-    <view class="pagination">
-      <button size="mini" @tap="prevPage" :disabled="page <= 1">上一页</button>
-      <text class="page-info">第 {{ page }} 页 / 共 {{ Math.ceil(total / pageSize) }} 页</text>
-      <button size="mini" @tap="nextPage" :disabled="page >= Math.ceil(total / pageSize)">下一页</button>
-    </view>
-
-    <!-- 编辑弹窗 -->
+    <!-- 缂栬緫寮圭獥 -->
     <view class="modal-mask" v-if="modalShow" @tap="closeModal">
-      <view class="modal-content" @tap.stop>
+      <view class="modal-dialog" @tap.stop>
         <view class="modal-header">
-          <text class="modal-title">{{ modalTitle }}</text>
-          <text class="modal-close" @tap="closeModal">×</text>
+          <view class="modal-title-wrapper">
+            <text class="modal-icon">{{ modalTitle.includes('鏂板') ? '鉃? : '鉁忥笍' }}</text>
+            <text class="modal-title">{{ modalTitle }}</text>
+          </view>
+          <button class="modal-close" @tap="closeModal">鉁?/button>
         </view>
         
         <view class="modal-body">
-          <!-- 店铺名称 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">店铺名称 <text class="required">*</text></text>
-            <input 
-              class="form-input form-input-name" 
-              v-model="formData.name" 
-              placeholder="请输入店铺名称"
-              maxlength="30"
-            />
-          </view>
-
-          <!-- 店铺描述 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">店铺描述</text>
-            <textarea 
-              class="form-textarea" 
-              v-model="formData.description" 
-              placeholder="请输入店铺描述"
-              maxlength="200"
-            />
-          </view>
-
-          <!-- 店主选择 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">店主 <text class="required">*</text></text>
-            <picker 
-              :range="userList" 
-              :value="userIndex"
-              range-key="nickname"
-              @change="onUserChange"
-            >
-              <view class="form-picker">
-                <text>{{ userList[userIndex]?.nickname || '请选择店主' }}</text>
-              </view>
-            </picker>
-          </view>
-
-          <!-- 评分 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">店铺评分</text>
-            <input 
-              class="form-input form-input-number" 
-              type="digit"
-              v-model.number="formData.rating" 
-              placeholder="1-5 分"
-              maxlength="3"
-            />
-          </view>
-
-          <!-- 联系电话 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">联系电话</text>
-            <input 
-              class="form-input form-input-name" 
-              v-model="formData.phone" 
-              placeholder="请输入联系电话"
-              maxlength="20"
-            />
-          </view>
-
-          <!-- 营业时间 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">营业时间</text>
-            <input 
-              class="form-input form-input-name" 
-              v-model="formData.businessHours" 
-              placeholder="例如：09:00-22:00"
-              maxlength="30"
-            />
-          </view>
-
-          <!-- 店铺地址 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">店铺地址</text>
-            <input 
-              class="form-input form-input-name" 
-              v-model="formData.address" 
-              placeholder="请输入详细地址"
-              maxlength="100"
-            />
-          </view>
-
-          <!-- 头像上传 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">店铺头像</text>
+          <view class="form-grid">
+            <!-- 绗竴琛岋細搴楅摵鍚嶇О + 搴椾富 -->
+            <view class="form-item">
+              <text class="form-label">搴楅摵鍚嶇О <text class="required">*</text></text>
+              <input 
+                class="form-input" 
+                v-model="formData.name" 
+                placeholder="璇疯緭鍏ュ簵閾哄悕绉?
+                maxlength="30"
+              />
+            </view>
             
-            <!-- 统一使用 uni.chooseImage（参照分类管理页面） -->
-            <view class="upload-area upload-area-compact">
-              <view 
-                v-if="formData.avatar" 
-                class="image-item image-item-small"
+            <view class="form-item">
+              <text class="form-label">搴椾富 <text class="required">*</text></text>
+              <picker 
+                :range="userList" 
+                :value="userIndex"
+                range-key="nickname"
+                @change="onUserChange"
               >
-                <image 
-                  :src="getFullImageUrl(formData.avatar)" 
-                  mode="aspectFill" 
-                  class="uploaded-image" 
-                  @tap="previewAvatarEdit"
-                />
-                <text class="image-delete" @tap="removeAvatar">×</text>
-              </view>
-              <view class="upload-btn upload-btn-small" @tap="chooseAvatar">
-                <text class="upload-icon">+</text>
-                <text class="upload-text">上传</text>
+                <view class="form-picker">
+                  <text>{{ userList[userIndex]?.nickname || '璇烽€夋嫨搴椾富' }}</text>
+                  <text class="picker-arrow">鈻?/text>
+                </view>
+              </picker>
+            </view>
+            
+            <!-- 绗簩琛岋細璇勫垎 + 鐘舵€?-->
+            <view class="form-item">
+              <text class="form-label">搴楅摵璇勫垎</text>
+              <view class="rating-input">
+                <view class="rating-stars-input">
+                  <text 
+                    v-for="i in 5" 
+                    :key="i"
+                    class="star"
+                    :class="{active: i <= (formData.rating || 5)}"
+                    @tap="setRating(i)"
+                  >猸?/text>
+                </view>
+                <text class="rating-text">{{ (formData.rating || 5).toFixed(1) }}鍒?/text>
               </view>
             </view>
             
-            <text class="form-tip">点击上传头像</text>
-          </view>
-
-          <!-- 状态 -->
-          <view class="form-item form-item-compact">
-            <text class="form-label">状态 <text class="required">*</text></text>
-            <view class="radio-group">
-              <label class="radio-item">
-                <radio :checked="formData.status === 1" color="#007aff" @tap="formData.status = 1" />
-                <text>营业</text>
-              </label>
-              <label class="radio-item">
-                <radio :checked="formData.status === 0" color="#007aff" @tap="formData.status = 0" />
-                <text>打烊</text>
-              </label>
+            <view class="form-item">
+              <text class="form-label">钀ヤ笟鐘舵€?/text>
+              <view class="toggle-group">
+                <view 
+                  :class="['toggle-option', formData.status === 1 ? 'active' : '']"
+                  @tap="formData.status = 1"
+                >
+                  <text>鉁?钀ヤ笟</text>
+                </view>
+                <view 
+                  :class="['toggle-option', formData.status === 0 ? 'active' : '']"
+                  @tap="formData.status = 0"
+                >
+                  <text>馃寵 鎵撶儕</text>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 绗笁琛岋細鑱旂郴鐢佃瘽 + 钀ヤ笟鏃堕棿 -->
+            <view class="form-item">
+              <text class="form-label">鑱旂郴鐢佃瘽</text>
+              <input 
+                class="form-input" 
+                v-model="formData.phone" 
+                placeholder="璇疯緭鍏ヨ仈绯荤數璇?
+                maxlength="20"
+              />
+            </view>
+            
+            <view class="form-item">
+              <text class="form-label">钀ヤ笟鏃堕棿</text>
+              <input 
+                class="form-input" 
+                v-model="formData.businessHours" 
+                placeholder="渚嬪锛?9:00-22:00"
+                maxlength="30"
+              />
+            </view>
+            
+            <!-- 绗洓琛岋細搴楅摵鍦板潃 -->
+            <view class="form-item form-item-full">
+              <text class="form-label">搴楅摵鍦板潃</text>
+              <input 
+                class="form-input" 
+                v-model="formData.address" 
+                placeholder="璇疯緭鍏ヨ缁嗗湴鍧€"
+                maxlength="100"
+              />
+            </view>
+            
+            <!-- 绗簲琛岋細搴楅摵鎻忚堪 -->
+            <view class="form-item form-item-full">
+              <text class="form-label">搴楅摵鎻忚堪</text>
+              <textarea 
+                class="form-textarea" 
+                v-model="formData.description" 
+                placeholder="璇疯緭鍏ュ簵閾烘弿杩帮紙閫夊～锛?
+                maxlength="200"
+              />
+            </view>
+            
+            <!-- 绗叚琛岋細澶村儚涓婁紶 -->
+            <view class="form-item form-item-full">
+              <text class="form-label">搴楅摵澶村儚</text>
+              <view class="upload-area">
+                <view 
+                  v-if="formData.avatar" 
+                  class="upload-preview"
+                >
+                  <image 
+                    :src="getFullImageUrl(formData.avatar)" 
+                    mode="aspectFill" 
+                    class="uploaded-image" 
+                    @tap="previewAvatarEdit"
+                  />
+                  <button class="image-delete" @tap="removeAvatar">鉁?/button>
+                </view>
+                <view class="upload-btn" @tap="chooseAvatar">
+                  <text class="upload-icon">馃摲</text>
+                  <text class="upload-text">鐐瑰嚮涓婁紶澶村儚</text>
+                  <text class="upload-tip">鏀寔 JPG/PNG 鏍煎紡</text>
+                </view>
+              </view>
             </view>
           </view>
         </view>
 
         <view class="modal-footer">
-          <button class="btn-cancel" type="button" @tap="closeModal">取消</button>
-          <button class="btn-confirm" type="button" @tap="handleSubmit">确定</button>
+          <button class="btn-cancel" @tap="closeModal">鍙栨秷</button>
+          <button class="btn-confirm" @tap="handleSubmit">纭淇濆瓨</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 鏌ョ湅寮圭獥 -->
+    <view class="modal-mask" v-if="viewModalShow" @tap="viewModalShow = false">
+      <view class="modal-dialog modal-view" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">馃搵 搴楅摵璇︽儏</text>
+          <button class="modal-close" @tap="viewModalShow = false">鉁?/button>
+        </view>
+        <view class="modal-body view-body">
+          <view class="view-grid">
+            <view class="view-item">
+              <text class="view-label">搴楅摵 ID</text>
+              <text class="view-value">#{{ viewData.id }}</text>
+            </view>
+            <view class="view-item">
+              <text class="view-label">搴楅摵鍚嶇О</text>
+              <text class="view-value">{{ viewData.name }}</text>
+            </view>
+            <view class="view-item">
+              <text class="view-label">搴椾富</text>
+              <text class="view-value">{{ viewData.ownerName || '-' }}</text>
+            </view>
+            <view class="view-item">
+              <text class="view-label">搴楅摵璇勫垎</text>
+              <text class="view-value">{{ Number(viewData.rating || 5).toFixed(1) }}鍒?/text>
+            </view>
+            <view class="view-item">
+              <text class="view-label">鑱旂郴鐢佃瘽</text>
+              <text class="view-value">{{ viewData.phone || '-' }}</text>
+            </view>
+            <view class="view-item">
+              <text class="view-label">钀ヤ笟鐘舵€?/text>
+              <view :class="['status-badge', viewData.status === 1 ? 'status-open' : 'status-closed']">
+                {{ viewData.status === 1 ? '钀ヤ笟涓? : '宸叉墦鐑? }}
+              </view>
+            </view>
+            <view class="view-item full">
+              <text class="view-label">钀ヤ笟鏃堕棿</text>
+              <text class="view-value">{{ viewData.businessHours || '-' }}</text>
+            </view>
+            <view class="view-item full">
+              <text class="view-label">搴楅摵鍦板潃</text>
+              <text class="view-value">{{ viewData.address || '-' }}</text>
+            </view>
+            <view class="view-item full">
+              <text class="view-label">搴楅摵鎻忚堪</text>
+              <text class="view-value view-desc">{{ viewData.description || '鏆傛棤鎻忚堪' }}</text>
+            </view>
+            <view class="view-item full" v-if="viewData.avatar">
+              <text class="view-label">搴楅摵澶村儚</text>
+              <image 
+                :src="getFullImageUrl(viewData.avatar)" 
+                mode="aspectFill" 
+                class="view-avatar"
+                @tap="previewViewAvatar"
+              />
+            </view>
+          </view>
+        </view>
+        <view class="modal-footer">
+          <button class="btn-cancel" @tap="viewModalShow = false">鍏抽棴</button>
+          <button class="btn-edit-full" @tap="handleEditFromView">缂栬緫姝ゅ簵閾?/button>
         </view>
       </view>
     </view>
@@ -244,7 +441,8 @@ export default {
       page: 1,
       pageSize: 10,
       modalShow: false,
-      modalTitle: '新增店铺',
+      viewModalShow: false,
+      modalTitle: '鏂板搴楅摵',
       formData: {
         id: null,
         name: '',
@@ -259,30 +457,46 @@ export default {
         reviewCount: 0,
         status: 1
       },
-      apiBaseUrl: 'http://192.168.1.21:5162',
+      viewData: {},
+      apiBaseUrl: 'http://localhost:5162',
       userList: [],
       userIndex: 0,
-      // 筛选相关
       searchKeyword: '',
-      statusOptions: ['全部', '营业', '打烊'],
       statusIndex: 0,
-      searchStatus: null
+      searchStatus: null,
+      selectedIds: [],
+      allSelected: false
     }
   },
   computed: {
     Math() {
       return Math
+    },
+    totalPages() {
+      return Math.ceil(this.total / this.pageSize)
+    },
+    openCount() {
+      return this.list.filter(item => item.status === 1).length
+    },
+    closedCount() {
+      return this.list.filter(item => item.status === 0).length
+    },
+    visiblePages() {
+      const pages = []
+      const total = this.totalPages
+      let start = Math.max(1, this.page - 2)
+      let end = Math.min(total, this.page + 2)
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+      return pages
     }
   },
   onShow() {
-    console.log('[onShow] 页面显示')
     if (!this.ensureAdminAccess()) return
-    console.log('[onShow] 开始加载数据')
     this.loadUsers().then(() => {
-      console.log('[onShow] 用户列表加载完成，数量:', this.userList.length)
       this.loadList()
-    }).catch(err => {
-      console.error('[onShow] 加载失败', err)
     })
   },
   methods: {
@@ -295,7 +509,7 @@ export default {
     ensureAdminAccess() {
       const user = getUserInfo()
       if (!user || user.role !== 'admin') {
-        uni.showToast({ title: '仅管理员可访问', icon: 'none' })
+        uni.showToast({ title: '浠呯鐞嗗憳鍙闂?, icon: 'none' })
         setTimeout(() => {
           uni.switchTab({ url: '/pages/user/user' })
         }, 300)
@@ -303,7 +517,7 @@ export default {
       }
       return true
     },
-    getFullImageUrl(path) {
+getFullImageUrl(path) {
       if (!path) return ''
       if (path.startsWith('http://') || path.startsWith('https://')) return path
       if (path.startsWith('/')) {
@@ -313,24 +527,16 @@ export default {
     },
     async loadUsers() {
       try {
-        console.log('[loadUsers] 开始加载用户列表')
         const res = await request({ url: '/api/admin/users?page=1&pageSize=100' })
         const allUsers = res?.data?.list || []
-        console.log('[loadUsers] 所有用户数量:', allUsers.length)
-        
-        // 筛选出商家用户
-        const merchantUsers = allUsers.filter(u => u.role === 'merchant')
-        console.log('[loadUsers] 商家用户数量:', merchantUsers.length)
-        
-        this.userList = merchantUsers.length > 0 ? merchantUsers : allUsers
-        console.log('[loadUsers] 最终用户列表数量:', this.userList.length)
-        console.log('[loadUsers] 用户列表:', this.userList)
-        
+        this.userList = allUsers.filter(u => u.role === 'merchant')
+        if (this.userList.length === 0) {
+          this.userList = allUsers
+        }
         if (this.userList.length > 0) {
           this.userIndex = 0
         }
       } catch (error) {
-        console.error('[loadUsers] 加载失败', error)
         this.userList = []
       }
     },
@@ -340,33 +546,34 @@ export default {
           page: this.page,
           pageSize: this.pageSize
         }
-        
-        // 添加筛选参数
         if (this.searchKeyword) {
           params.keyword = this.searchKeyword
         }
         if (this.searchStatus !== null && this.searchStatus !== undefined) {
           params.status = this.searchStatus
         }
-        
         const res = await request({ url: '/api/admin/shops', data: params })
         this.list = res?.data?.list || []
         this.total = res?.data?.total || 0
+        this.selectedIds = []
+        this.allSelected = false
       } catch (error) {
-        uni.showToast({ title: error.message || '加载失败', icon: 'none' })
+        uni.showToast({ title: error.message || '鍔犺浇澶辫触', icon: 'none' })
       }
     },
-    
-    // 筛选方法
     handleSearch() {
       this.page = 1
       this.loadList()
     },
-    onStatusChange(e) {
-      this.statusIndex = e.detail.value
-      if (this.statusIndex === 0) {
+    clearSearch() {
+      this.searchKeyword = ''
+      this.handleSearch()
+    },
+    selectStatus(index) {
+      this.statusIndex = index
+      if (index === 0) {
         this.searchStatus = null
-      } else if (this.statusIndex === 1) {
+      } else if (index === 1) {
         this.searchStatus = 1
       } else {
         this.searchStatus = 0
@@ -381,16 +588,35 @@ export default {
       this.page = 1
       this.loadList()
     },
-    
-    // 店主选择
     onUserChange(e) {
       this.userIndex = e.detail.value
       if (this.formData.id) {
         this.formData.ownerId = this.userList[this.userIndex]?.id
       }
     },
-    
-    // 头像预览
+    setRating(rating) {
+      this.formData.rating = rating
+    },
+    toggleSelect(id) {
+      const index = this.selectedIds.indexOf(id)
+      if (index > -1) {
+        this.selectedIds.splice(index, 1)
+      } else {
+        this.selectedIds.push(id)
+      }
+      this.updateSelectAll()
+    },
+    toggleSelectAll() {
+      if (this.allSelected) {
+        this.selectedIds = []
+      } else {
+        this.selectedIds = this.list.map(item => item.id)
+      }
+      this.allSelected = !this.allSelected
+    },
+    updateSelectAll() {
+      this.allSelected = this.selectedIds.length === this.list.length && this.list.length > 0
+    },
     previewAvatar(index) {
       const item = this.list[index]
       if (!item.avatar) return
@@ -406,115 +632,16 @@ export default {
         current: 0
       })
     },
-    
-    // 头像上传（统一使用 uni.chooseImage，参照分类管理页面）
-    chooseAvatar() {
-      console.log('===== 点击上传按钮 =====')
-      console.log('[当前 avatar]', this.formData.avatar)
-      
-      uni.showLoading({ title: '选择图片...' })
-      
-      // 使用 uni.chooseImage（所有环境通用）
-      uni.chooseImage({
-        count: 1,
-        sizeType: ['compressed'],
-        sourceType: ['album', 'camera'],
-        success: async (res) => {
-          console.log('[chooseImage 成功]', res)
-          uni.hideLoading()
-          
-          if (!res.tempFiles || res.tempFiles.length === 0) {
-            console.error('[没有选择文件]')
-            uni.showToast({ title: '没有选择文件', icon: 'none' })
-            return
-          }
-          
-          const filePath = res.tempFiles[0].path
-          console.log('[文件路径]', filePath)
-          console.log('[文件大小]', res.tempFiles[0].size, 'bytes')
-          
-          uni.showLoading({ title: '上传中...' })
-          try {
-            await this.uploadAvatar(filePath)
-          } catch (error) {
-            console.error('[上传异常]', error)
-          } finally {
-            uni.hideLoading()
-          }
-        },
-        fail: (err) => {
-          console.error('[chooseImage 失败]', err)
-          uni.hideLoading()
-          
-          // 判断是否是用户取消
-          if (err.errMsg && err.errMsg.includes('cancel')) {
-            console.log('[用户取消选择]')
-          } else {
-            console.error('[选择图片错误]', err)
-            uni.showToast({ title: '选择失败：' + (err.errMsg || '未知错误'), icon: 'none', duration: 3000 })
-          }
-        }
-      })
-    },
-    
-    // 头像上传（统一使用 uni.chooseImage，参照分类管理页面）
-    chooseAvatar() {
-      console.log('===== 点击上传按钮 =====')
-      console.log('[当前 avatar]', this.formData.avatar)
-      
-      uni.showLoading({ title: '选择图片...' })
-      
-      // 使用 uni.chooseImage
-      uni.chooseImage({
-        count: 1,
-        sizeType: ['compressed'],
-        sourceType: ['album', 'camera'],
-        success: async (res) => {
-          console.log('[chooseImage 成功]', res)
-          uni.hideLoading()
-          
-          if (!res.tempFiles || res.tempFiles.length === 0) {
-            console.error('[没有选择文件]')
-            uni.showToast({ title: '没有选择文件', icon: 'none' })
-            return
-          }
-          
-          const filePath = res.tempFiles[0].path
-          console.log('[文件路径]', filePath)
-          console.log('[文件大小]', res.tempFiles[0].size, 'bytes')
-          
-          uni.showLoading({ title: '上传中...' })
-          try {
-            await this.uploadAvatar(filePath)
-          } catch (error) {
-            console.error('[上传异常]', error)
-          } finally {
-            uni.hideLoading()
-          }
-        },
-        fail: (err) => {
-          console.error('[chooseImage 失败]', err)
-          uni.hideLoading()
-          
-          // 判断是否是用户取消
-          if (err.errMsg && err.errMsg.includes('cancel')) {
-            console.log('[用户取消选择]')
-          } else {
-            console.error('[选择图片错误]', err)
-            uni.showToast({ title: '选择失败：' + (err.errMsg || '未知错误'), icon: 'none', duration: 3000 })
-          }
-        }
+    previewViewAvatar() {
+      if (!this.viewData.avatar) return
+      uni.previewImage({
+        urls: [this.getFullImageUrl(this.viewData.avatar)],
+        current: 0
       })
     },
     async uploadAvatar(filePath) {
       return new Promise((resolve, reject) => {
-        console.log('[开始上传] URL:', this.apiBaseUrl + '/api/admin/categories/upload')
-        console.log('[文件路径]', filePath)
-        console.log('[Token]', uni.getStorageSync('token'))
-        
-        // H5 环境可能需要使用完整的 URL
         const uploadUrl = this.apiBaseUrl + '/api/admin/categories/upload'
-        
         uni.uploadFile({
           url: uploadUrl,
           filePath: filePath,
@@ -527,89 +654,77 @@ export default {
             folder: 'categories'
           },
           success: (res) => {
-            console.log('===== 上传成功 =====')
-            console.log('[响应状态码]', res.statusCode)
-            console.log('[响应原始数据]', res.data)
-            console.log('[响应数据类型]', typeof res.data)
-            
             uni.hideLoading()
-            
-            // 检查状态码
             if (res.statusCode !== 200) {
-              console.error('[HTTP 错误]', res.statusCode)
-              uni.showToast({ title: '上传失败：HTTP ' + res.statusCode, icon: 'none' })
+              uni.showToast({ title: '涓婁紶澶辫触锛欻TTP ' + res.statusCode, icon: 'none' })
               reject(new Error('HTTP ' + res.statusCode))
               return
             }
-            
-            // 解析响应数据
             let data
             try {
-              // H5 环境下 res.data 可能已经是对象
               if (typeof res.data === 'string') {
-                console.log('[解析 JSON 字符串]')
                 data = JSON.parse(res.data)
-              } else if (typeof res.data === 'object') {
-                console.log('[直接使用对象]')
-                data = res.data
               } else {
-                console.log('[尝试解析]', res.data)
-                data = JSON.parse(res.data)
+                data = res.data
               }
-              console.log('[解析后的数据]', data)
             } catch (e) {
-              console.error('[JSON 解析失败]', e)
-              console.error('[原始数据]', res.data)
-              uni.showToast({ title: '响应解析失败：' + e.message, icon: 'none' })
+              uni.showToast({ title: '鍝嶅簲瑙ｆ瀽澶辫触', icon: 'none' })
               reject(e)
               return
             }
-            
-            // 检查响应内容
             if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
               this.formData.avatar = data.data[0]
-              console.log('[头像已设置]', this.formData.avatar)
-              uni.showToast({ title: '上传成功', icon: 'success' })
+              uni.showToast({ title: '涓婁紶鎴愬姛', icon: 'success' })
               resolve()
             } else {
-              const msg = data.message || data.msg || '上传失败：未知错误'
-              console.error('[业务错误]', msg, data)
-              uni.showToast({ title: msg, icon: 'none', duration: 3000 })
+              const msg = data.message || data.msg || '涓婁紶澶辫触'
+              uni.showToast({ title: msg, icon: 'none' })
               reject(new Error(msg))
             }
           },
           fail: (err) => {
-            console.error('===== 上传失败 =====')
-            console.error('[错误信息]', err)
-            console.error('[错误码]', err.errCode)
-            console.error('[错误消息]', err.errMsg)
-            
             uni.hideLoading()
-            
-            let errorMsg = '上传失败'
-            if (err.errMsg) {
-              if (err.errMsg.includes('timeout')) {
-                errorMsg = '上传超时，请重试'
-              } else if (err.errMsg.includes('fail')) {
-                errorMsg = '网络错误，请检查连接'
-              } else {
-                errorMsg = err.errMsg
-              }
-            }
-            
-            uni.showToast({ title: errorMsg, icon: 'none', duration: 3000 })
+            uni.showToast({ title: '涓婁紶澶辫触', icon: 'none' })
             reject(err)
           }
         })
       })
     },
+    chooseAvatar() {
+      uni.showLoading({ title: '閫夋嫨鍥剧墖...' })
+      uni.chooseImage({
+        count: 1,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+        success: async (res) => {
+          uni.hideLoading()
+          if (!res.tempFiles || res.tempFiles.length === 0) {
+            uni.showToast({ title: '娌℃湁閫夋嫨鏂囦欢', icon: 'none' })
+            return
+          }
+          const filePath = res.tempFiles[0].path
+          uni.showLoading({ title: '涓婁紶涓?..' })
+          try {
+            await this.uploadAvatar(filePath)
+          } catch (error) {
+            console.error('[涓婁紶寮傚父]', error)
+          } finally {
+            uni.hideLoading()
+          }
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          if (!err.errMsg || !err.errMsg.includes('cancel')) {
+            uni.showToast({ title: '閫夋嫨澶辫触', icon: 'none' })
+          }
+        }
+      })
+    },
     removeAvatar() {
       this.formData.avatar = ''
     },
-    
-    // 增删改
     handleAdd() {
-      this.modalTitle = '新增店铺'
+      this.modalTitle = '鏂板搴楅摵'
       this.formData = {
         id: null,
         name: '',
@@ -628,12 +743,7 @@ export default {
       this.modalShow = true
     },
     handleEdit(row) {
-      console.log('[handleEdit] 编辑行数据:', row)
-      console.log('[handleEdit] row.ownerId:', row.ownerId, '类型:', typeof row.ownerId)
-      console.log('[handleEdit] 当前 userList:', this.userList)
-      console.log('[handleEdit] userList 长度:', this.userList.length)
-      
-      this.modalTitle = '编辑店铺'
+      this.modalTitle = '缂栬緫搴楅摵'
       this.formData = {
         id: row.id,
         name: row.name,
@@ -648,45 +758,37 @@ export default {
         reviewCount: row.reviewCount || 0,
         status: row.status !== undefined ? row.status : 1
       }
-      
-      console.log('[handleEdit] formData:', this.formData)
-      console.log('[handleEdit] formData.ownerId:', this.formData.ownerId)
-      
-      // 设置店主选择器索引
-      // 注意：需要确保类型一致（number vs string）
       const ownerIdNum = Number(row.ownerId)
-      this.userIndex = this.userList.findIndex(u => {
-        const userIdNum = Number(u.id)
-        const match = userIdNum === ownerIdNum
-        console.log('[handleEdit] 比较用户 ID:', u.id, '==', row.ownerId, '?', match)
-        return match
-      })
-      
-      console.log('[handleEdit] userIndex:', this.userIndex)
-      
+      this.userIndex = this.userList.findIndex(u => Number(u.id) === ownerIdNum)
       if (this.userIndex < 0) {
-        console.warn('[handleEdit] 未找到匹配的店主（ownerId=' + row.ownerId + '），使用第一个')
-        console.warn('[handleEdit] userList:', this.userList)
         this.userIndex = 0
       }
-      
-      console.log('[handleEdit] 最终 userIndex:', this.userIndex)
-      console.log('[handleEdit] 选中的店主:', this.userList[this.userIndex])
-      
       this.modalShow = true
+    },
+    handleView(row) {
+      this.viewData = { ...row }
+      const owner = this.userList.find(u => Number(u.id) === Number(row.ownerId))
+      this.viewData.ownerName = owner?.nickname || '-'
+      this.viewModalShow = true
+    },
+    handleEditFromView() {
+      this.viewModalShow = false
+      setTimeout(() => {
+        this.handleEdit(this.viewData)
+      }, 300)
     },
     handleDelete(row) {
       uni.showModal({
-        title: '提示',
-        content: '确定要删除该店铺吗？',
+        title: '纭鍒犻櫎',
+        content: '纭畾瑕佸垹闄ゅ簵閾恒€? + row.name + '銆嶅悧锛熸鎿嶄綔涓嶅彲鎭㈠銆?,
         success: async (res) => {
           if (res.confirm) {
             try {
               await request({ url: `/api/admin/shops/${row.id}`, method: 'DELETE' })
-              uni.showToast({ title: '删除成功', icon: 'success' })
+              uni.showToast({ title: '鍒犻櫎鎴愬姛', icon: 'success' })
               this.loadList()
             } catch (error) {
-              uni.showToast({ title: error.message || '删除失败', icon: 'none' })
+              uni.showToast({ title: error.message || '鍒犻櫎澶辫触', icon: 'none' })
             }
           }
         }
@@ -696,30 +798,16 @@ export default {
       this.modalShow = false
     },
     async handleSubmit() {
-      console.log('===== 点击确定按钮 =====')
-      console.log('[当前 formData]', this.formData)
-      console.log('[是否是编辑]', !!this.formData.id)
-      
-      // 验证店铺名称（必填）
       if (!this.formData.name || !this.formData.name.trim()) {
-        console.warn('[验证失败] 店铺名称为空')
-        uni.showToast({ title: '请输入店铺名称', icon: 'none' })
+        uni.showToast({ title: '璇疯緭鍏ュ簵閾哄悕绉?, icon: 'none' })
         return
       }
-      
-      // 编辑模式下验证店主 ID（新增店铺时店主 ID 可选，为自增字段）
-      // 注意：ownerId 为 0 也表示没有设置店主
-      if (this.formData.id && (!this.formData.ownerId || this.formData.ownerId <= 0)) {
-        console.warn('[验证失败] 编辑模式下店主 ID 不能为空')
-        console.warn('[当前 ownerId]', this.formData.ownerId)
-        uni.showToast({ title: '请选择店主', icon: 'none' })
-        return
+      if (this.formData.id && this.userList[this.userIndex]?.id) {
+        this.formData.ownerId = this.userList[this.userIndex].id
+      } else if (!this.formData.id && this.userList[this.userIndex]?.id) {
+        this.formData.ownerId = this.userList[this.userIndex].id
       }
-      
-      console.log('[验证通过]')
-      
       try {
-        // 构建提交数据
         const data = {
           name: this.formData.name.trim(),
           description: this.formData.description,
@@ -732,31 +820,19 @@ export default {
           reviewCount: this.formData.reviewCount,
           status: this.formData.status
         }
-        
-        // 编辑模式下必须传递 ownerId，新增模式下可选
         if (this.formData.ownerId) {
           data.ownerId = this.formData.ownerId
         }
-        
-        console.log('[提交数据]', data)
-        
         if (this.formData.id) {
-          console.log('[更新店铺] ID:', this.formData.id)
           await request({ url: `/api/admin/shops/${this.formData.id}`, method: 'PUT', data })
         } else {
-          console.log('[新增店铺]')
           await request({ url: '/api/admin/shops', method: 'POST', data })
         }
-        
-        console.log('[保存成功]')
-        uni.showToast({ title: '保存成功', icon: 'success' })
+        uni.showToast({ title: '淇濆瓨鎴愬姛', icon: 'success' })
         this.closeModal()
         this.loadList()
       } catch (error) {
-        console.error('[保存失败]', error)
-        console.error('[错误信息]', error.message)
-        console.error('[错误响应]', error.response)
-        uni.showToast({ title: error.message || '保存失败', icon: 'none', duration: 3000 })
+        uni.showToast({ title: error.message || '淇濆瓨澶辫触', icon: 'none' })
       }
     },
     prevPage() {
@@ -766,9 +842,15 @@ export default {
       }
     },
     nextPage() {
-      const maxPage = Math.ceil(this.total / this.pageSize)
+      const maxPage = this.totalPages
       if (this.page < maxPage) {
         this.page++
+        this.loadList()
+      }
+    },
+    goToPage(page) {
+      if (page !== this.page && page >= 1 && page <= this.totalPages) {
+        this.page = page
         this.loadList()
       }
     }
@@ -777,231 +859,651 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// 鍙橀噺瀹氫箟
+$primary-color: #4f46e5;
+$primary-hover: #4338ca;
+$success-color: #10b981;
+$danger-color: #ef4444;
+$warning-color: #f59e0b;
+$info-color: #3b82f6;
+$text-primary: #1f2937;
+$text-secondary: #6b7280;
+$text-light: #9ca3af;
+$border-color: #e5e7eb;
+$bg-light: #f9fafb;
+$bg-white: #ffffff;
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+$radius-sm: 6px;
+$radius: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+
 .page {
   min-height: 100vh;
-  background: #eceef2;
-  padding: 20rpx;
+  background: #f3f4f6;
+  padding: 24px;
 }
 
-.page-bar {
+// 椤甸潰澶撮儴
+.page-header {
   display: flex;
-  justify-content: flex-end;
-  gap: 12rpx;
-  margin-bottom: 16rpx;
-}
-
-// 筛选栏
-.search-bar {
-  display: flex;
-  gap: 16rpx;
-  margin-bottom: 20rpx;
-  padding: 20rpx;
-  background: #fff;
-  border-radius: 8rpx;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: $bg-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow;
   
-  .search-input {
-    flex: 1;
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: $text-primary;
+  }
+  
+  .page-subtitle {
+    font-size: 14px;
+    color: $text-secondary;
+  }
+  
+  .header-right {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .btn-back, .btn-user {
     display: flex;
     align-items: center;
-    border: 1px solid #ddd;
-    border-radius: 8rpx;
-    padding: 0 16rpx;
-    background: #f5f5f5;
+    gap: 6px;
+    padding: 10px 16px;
+    background: $bg-light;
+    border: 1px solid $border-color;
+    border-radius: $radius;
+    font-size: 14px;
+    color: $text-secondary;
+    transition: all 0.2s;
     
-    .input {
-      flex: 1;
-      height: 70rpx;
-      font-size: 28rpx;
+    &:hover {
+      background: #f3f4f6;
+      color: $text-primary;
     }
     
+    .btn-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+// 缁熻鍗＄墖
+.stats-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: $bg-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow;
+  border-left: 4px solid transparent;
+  
+  &.stat-total {
+    border-left-color: $primary-color;
+  }
+  
+  &.stat-open {
+    border-left-color: $success-color;
+  }
+  
+  &.stat-closed {
+    border-left-color: $warning-color;
+  }
+  
+  .stat-icon {
+    font-size: 32px;
+    line-height: 1;
+  }
+  
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: $text-primary;
+  }
+  
+  .stat-label {
+    font-size: 13px;
+    color: $text-secondary;
+    margin-top: 2px;
+  }
+}
+
+// 宸ュ叿鏍?.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: $bg-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow;
+  margin-bottom: 20px;
+  
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex: 1;
+  }
+  
+  .search-box {
+    position: relative;
+    width: 280px;
+    display: flex;
+    align-items: center;
+    
     .search-icon {
-      font-size: 32rpx;
-      padding-left: 10rpx;
+      position: absolute;
+      left: 12px;
+      font-size: 16px;
+      color: $text-light;
+      z-index: 1;
+    }
+    
+    .search-input {
+      width: 100%;
+      height: 40px;
+      padding: 0 36px;
+      background: $bg-light;
+      border: 1px solid $border-color;
+      border-radius: $radius;
+      font-size: 14px;
+      transition: all 0.2s;
+      
+      &:focus {
+        background: $bg-white;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      }
+    }
+    
+    .search-clear {
+      position: absolute;
+      right: 12px;
+      font-size: 14px;
+      color: $text-light;
+      cursor: pointer;
+      z-index: 1;
+      
+      &:hover {
+        color: $text-secondary;
+      }
     }
   }
   
-  .search-select {
-    width: 200rpx;
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     
-    .picker {
-      height: 70rpx;
-      line-height: 70rpx;
-      text-align: center;
-      background: #f5f5f5;
-      border-radius: 8rpx;
-      font-size: 28rpx;
-      border: 1px solid #ddd;
+    .filter-label {
+      font-size: 14px;
+      color: $text-secondary;
     }
+    
+    .filter-options {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .filter-option {
+      padding: 8px 16px;
+      background: $bg-light;
+      border: 1px solid $border-color;
+      border-radius: $radius;
+      font-size: 14px;
+      color: $text-secondary;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover {
+        background: #f3f4f6;
+      }
+      
+      &.active {
+        background: $primary-color;
+        border-color: $primary-color;
+        color: #fff;
+      }
+    }
+  }
+  
+  .toolbar-right {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .btn-reset, .btn-add {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: $radius;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
   }
   
   .btn-reset {
-    font-size: 28rpx;
-    padding: 0 24rpx;
+    background: $bg-light;
+    color: $text-secondary;
+    
+    &:hover {
+      background: #f3f4f6;
+    }
+    
+    .btn-icon {
+      font-size: 16px;
+    }
+  }
+  
+  .btn-add {
+    background: $primary-color;
+    color: #fff;
+    
+    &:hover {
+      background: $primary-hover;
+    }
+    
+    .btn-icon {
+      font-size: 18px;
+      font-weight: bold;
+    }
   }
 }
 
-// 表格样式
-.table-container {
-  background: #fff;
-  border-radius: 8rpx;
+// 琛ㄦ牸
+.table-wrapper {
+  background: $bg-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow;
   overflow: hidden;
-  margin-bottom: 20rpx;
+}
+
+.table-container {
+  overflow-x: auto;
 }
 
 .table-header {
-  background: #f5f7fa;
+  background: #f9fafb;
+  border-bottom: 1px solid $border-color;
 }
 
 .table-row {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid $border-color;
+  transition: background 0.2s;
   
-  &.header-row {
-    font-weight: bold;
-    color: #666;
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &.highlighted {
+    background: rgba(79, 70, 229, 0.04);
   }
 }
 
 .table-cell {
-  padding: 16rpx;
-  text-align: center;
-  font-size: 26rpx;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
   
-  // 序号列 - 8%
-  &:nth-child(1) {
-    width: 8%;
-    min-width: 60rpx;
+  &.cell-checkbox {
+    width: 60px;
+    justify-content: center;
   }
   
-  // 店铺名称列 - 25%
-  &:nth-child(2) {
-    width: 25%;
-    min-width: 150rpx;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  &.cell-id {
+    width: 80px;
+    font-size: 13px;
+    color: $text-light;
+    font-family: monospace;
   }
   
-  // 头像列 - 12%
-  &:nth-child(3) {
-    width: 12%;
-    min-width: 100rpx;
+  &.cell-shop {
+    flex: 1;
+    min-width: 250px;
   }
   
-  // 评分列 - 10%
-  &:nth-child(4) {
-    width: 10%;
-    min-width: 100rpx;
+  &.cell-rating {
+    width: 180px;
   }
   
-  // 联系电话列 - 15%
-  &:nth-child(5) {
-    width: 15%;
-    min-width: 150rpx;
+  &.cell-phone {
+    width: 150px;
+    color: $text-secondary;
   }
   
-  // 状态列 - 10%
-  &:nth-child(6) {
-    width: 10%;
-    min-width: 100rpx;
+  &.cell-status {
+    width: 120px;
   }
   
-  // 操作列 - 25%
-  &:nth-child(7) {
-    width: 25%;
-    min-width: 150rpx;
+  &.cell-actions {
+    width: 140px;
+    justify-content: center;
   }
 }
 
-.cell-text-ellipsis {
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid $border-color;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  
+  &.checked {
+    background: $primary-color;
+    border-color: $primary-color;
+    
+    &::after {
+      content: '鉁?;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 12px;
+      font-weight: bold;
+    }
+  }
+}
+
+.shop-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.shop-avatar, .shop-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: $radius;
+  flex-shrink: 0;
+}
+
+.shop-avatar {
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.shop-avatar-placeholder {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  text {
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+  }
+}
+
+.shop-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shop-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: $text-primary;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.shop-avatar {
-  width: 60rpx;
-  height: 60rpx;
-  border-radius: 50%;
-  background: #f5f5f5;
+.shop-desc {
+  font-size: 12px;
+  color: $text-light;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
 }
 
-.no-image {
-  font-size: 22rpx;
-  color: #999;
+.rating-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  .star-icon {
+    font-size: 14px;
+  }
+  
+  .rating-value {
+    font-size: 13px;
+    color: $text-secondary;
+    margin-left: 4px;
+  }
 }
 
-.status-tag {
-  display: inline-block;
-  padding: 6rpx 14rpx;
-  border-radius: 6rpx;
-  font-size: 24rpx;
-  min-width: 70rpx;
-  text-align: center;
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
   
   &.status-open {
-    background: #e8f5e9;
-    color: #2e7d32;
-    font-weight: 500;
+    background: rgba(16, 185, 129, 0.1);
+    color: $success-color;
   }
   
   &.status-closed {
-    background: #fff3e0;
-    color: #e65100;
-    font-weight: 500;
+    background: rgba(245, 158, 11, 0.1);
+    color: $warning-color;
+  }
+  
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
   }
 }
 
-// 操作按钮容器
-.action-buttons {
+.action-btns {
   display: flex;
-  flex-direction: row;
+  gap: 8px;
+}
+
+.btn-action {
+  width: 36px;
+  height: 36px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
-  width: 100%;
+  border: none;
+  border-radius: $radius;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 16px;
+  padding: 0;
+  
+  &.btn-view {
+    background: rgba(59, 130, 246, 0.1);
+    color: $info-color;
+    
+    &:hover {
+      background: $info-color;
+      color: #fff;
+    }
+  }
+  
+  &.btn-edit {
+    background: rgba(245, 158, 11, 0.1);
+    color: $warning-color;
+    
+    &:hover {
+      background: $warning-color;
+      color: #fff;
+    }
+  }
+  
+  &.btn-delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: $danger-color;
+    
+    &:hover {
+      background: $danger-color;
+      color: #fff;
+    }
+  }
 }
 
-.btn-edit, .btn-delete {
-  font-size: 22rpx;
-  padding: 0 12rpx;
-  height: 48rpx;
-  line-height: 48rpx;
-  margin: 0;
-  border-radius: 6rpx;
-  flex: 0 0 auto;
+// 绌虹姸鎬?.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+  
+  .empty-text {
+    font-size: 16px;
+    color: $text-secondary;
+    margin-bottom: 24px;
+  }
+  
+  .btn-add-empty {
+    padding: 12px 32px;
+    background: $primary-color;
+    color: #fff;
+    border: none;
+    border-radius: $radius;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: $primary-hover;
+    }
+  }
 }
 
-.btn-edit {
-  background: #2196f3;
-  color: #fff;
-}
-
-.btn-delete {
-  background: #f44336;
-  color: #fff;
-}
-
-// 分页
+// 鍒嗛〉
 .pagination {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 20rpx;
-  padding: 20rpx;
-  background: #fff;
-  border-radius: 8rpx;
+  padding: 16px 24px;
+  border-top: 1px solid $border-color;
   
-  .page-info {
-    font-size: 26rpx;
-    color: #666;
+  .pagination-info {
+    font-size: 14px;
+    color: $text-secondary;
+  }
+  
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .btn-page {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: $bg-light;
+    border: 1px solid $border-color;
+    border-radius: $radius;
+    font-size: 14px;
+    color: $text-secondary;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover:not(:disabled) {
+      background: #f3f4f6;
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+  
+  .page-numbers {
+    display: flex;
+    gap: 4px;
+  }
+  
+  .page-number {
+    min-width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    background: $bg-light;
+    border: 1px solid $border-color;
+    border-radius: $radius;
+    font-size: 14px;
+    color: $text-secondary;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+    
+    &.active {
+      background: $primary-color;
+      border-color: $primary-color;
+      color: #fff;
+    }
   }
 }
 
-// 弹窗
+// 寮圭獥
 .modal-mask {
   position: fixed;
   top: 0;
@@ -1013,224 +1515,383 @@ export default {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
-.modal-content {
-  background: #fff;
-  border-radius: 16rpx;
+.modal-dialog {
+  background: $bg-white;
+  border-radius: $radius-xl;
   width: 90%;
-  max-width: 800rpx;
-  max-height: 80vh;
-  overflow-y: auto;
+  max-width: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: $shadow-lg;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 30rpx;
-  border-bottom: 1px solid #eee;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid $border-color;
+  
+  .modal-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .modal-icon {
+    font-size: 20px;
+  }
   
   .modal-title {
-    font-size: 32rpx;
-    font-weight: bold;
+    font-size: 18px;
+    font-weight: 600;
+    color: $text-primary;
   }
   
   .modal-close {
-    font-size: 48rpx;
-    color: #999;
-    line-height: 1;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $bg-light;
+    border: none;
+    border-radius: $radius;
+    font-size: 18px;
+    color: $text-secondary;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: $danger-color;
+      color: #fff;
+    }
   }
 }
 
 .modal-body {
-  padding: 30rpx;
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
 }
 
 .form-item {
-  margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  
+  &.form-item-full {
+    grid-column: 1 / -1;
+  }
   
   .form-label {
-    display: block;
-    font-size: 26rpx;
-    color: #333;
-    margin-bottom: 12rpx;
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-primary;
     
     .required {
-      color: #f44336;
+      color: $danger-color;
+    }
+  }
+  
+  .form-input, .form-textarea {
+    padding: 10px 14px;
+    background: $bg-light;
+    border: 1px solid $border-color;
+    border-radius: $radius;
+    font-size: 14px;
+    transition: all 0.2s;
+    
+    &:focus {
+      background: $bg-white;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      outline: none;
     }
   }
   
   .form-input {
-    width: 100%;
-    height: 64rpx;
-    border: 1px solid #ddd;
-    border-radius: 6rpx;
-    padding: 0 12rpx;
-    font-size: 26rpx;
-  }
-  
-  // 名称输入框
-  .form-input-name {
-    max-width: 400rpx;
-  }
-  
-  // 数字输入框
-  .form-input-number {
-    max-width: 200rpx;
+    height: 42px;
   }
   
   .form-textarea {
-    width: 100%;
-    min-height: 120rpx;
-    border: 1px solid #ddd;
-    border-radius: 6rpx;
-    padding: 12rpx;
-    font-size: 26rpx;
-    line-height: 1.6;
+    min-height: 80px;
+    resize: vertical;
   }
   
   .form-picker {
-    height: 64rpx;
-    line-height: 64rpx;
-    background: #f5f5f5;
-    border-radius: 6rpx;
-    padding: 0 16rpx;
-    font-size: 26rpx;
-    border: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: $bg-light;
+    border: 1px solid $border-color;
+    border-radius: $radius;
+    font-size: 14px;
+    color: $text-secondary;
+    cursor: pointer;
+    
+    .picker-arrow {
+      font-size: 12px;
+    }
+  }
+}
+
+.rating-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  .rating-stars-input {
+    display: flex;
+    gap: 4px;
+    
+    .star {
+      font-size: 20px;
+      opacity: 0.3;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &.active {
+        opacity: 1;
+      }
+      
+      &:hover {
+        transform: scale(1.1);
+      }
+    }
   }
   
-  .form-tip {
-    display: block;
-    font-size: 22rpx;
-    color: #999;
-    margin-top: 6rpx;
+  .rating-text {
+    font-size: 14px;
+    color: $text-secondary;
   }
 }
 
-.form-item-compact {
-  margin-bottom: 20rpx;
+.toggle-group {
+  display: flex;
+  gap: 8px;
+  
+  .toggle-option {
+    flex: 1;
+    padding: 10px;
+    background: $bg-light;
+    border: 2px solid $border-color;
+    border-radius: $radius;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      border-color: $primary-color;
+    }
+    
+    &.active {
+      background: $primary-color;
+      border-color: $primary-color;
+      color: #fff;
+    }
+  }
 }
 
-// 上传区域
 .upload-area {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  min-height: auto;
-  
-  &.upload-area-compact {
-    gap: 10rpx;
-  }
+  gap: 16px;
+  align-items: flex-start;
 }
 
-.image-item {
+.upload-preview {
   position: relative;
-  width: 120rpx;
-  height: 120rpx;
-  background: #f5f5f5;
-  border-radius: 6rpx;
+  width: 120px;
+  height: 120px;
+  border-radius: $radius;
   overflow: hidden;
-  flex-shrink: 0;
-  
-  &.image-item-small {
-    width: 100rpx;
-    height: 100rpx;
-  }
   
   .uploaded-image {
     width: 100%;
     height: 100%;
-    border-radius: 6rpx;
-    background: #e0e0e0;
+    object-fit: cover;
   }
   
   .image-delete {
     position: absolute;
-    top: -8rpx;
-    right: -8rpx;
-    width: 36rpx;
-    height: 36rpx;
-    background: rgba(244, 67, 54, 0.9);
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.9);
     color: #fff;
+    border: none;
     border-radius: 50%;
-    text-align: center;
-    line-height: 32rpx;
-    font-size: 24rpx;
-    z-index: 10;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      transform: scale(1.1);
+    }
   }
 }
 
 .upload-btn {
-  width: 120rpx;
-  height: 120rpx;
-  border: 2rpx dashed #ddd;
-  border-radius: 6rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #fafafa;
-  flex-shrink: 0;
+  gap: 8px;
+  padding: 20px 32px;
+  background: $bg-light;
+  border: 2px dashed $border-color;
+  border-radius: $radius;
+  cursor: pointer;
+  transition: all 0.2s;
   
-  &.upload-btn-small {
-    width: 100rpx;
-    height: 100rpx;
-    
-    .upload-icon {
-      font-size: 40rpx;
-    }
-    
-    .upload-text {
-      font-size: 20rpx;
-    }
+  &:hover {
+    border-color: $primary-color;
+    background: rgba(79, 70, 229, 0.05);
   }
   
   .upload-icon {
-    font-size: 44rpx;
-    color: #999;
-    line-height: 1;
+    font-size: 32px;
   }
   
   .upload-text {
-    font-size: 22rpx;
-    color: #999;
-    margin-top: 6rpx;
+    font-size: 14px;
+    color: $text-primary;
+    font-weight: 500;
   }
-}
-
-// 单选框
-.radio-group {
-  display: flex;
-  gap: 40rpx;
-}
-
-.radio-item {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-  font-size: 26rpx;
+  
+  .upload-tip {
+    font-size: 12px;
+    color: $text-light;
+  }
 }
 
 .modal-footer {
   display: flex;
-  gap: 20rpx;
-  padding: 30rpx;
-  border-top: 1px solid #eee;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid $border-color;
   
   button {
     flex: 1;
-    font-size: 30rpx;
+    padding: 12px 24px;
+    border: none;
+    border-radius: $radius;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
   }
   
   .btn-cancel {
-    background: #f5f5f5;
-    color: #666;
+    background: $bg-light;
+    color: $text-secondary;
+    
+    &:hover {
+      background: #f3f4f6;
+    }
   }
   
   .btn-confirm {
-    background: #007aff;
+    background: $primary-color;
     color: #fff;
+    
+    &:hover {
+      background: $primary-hover;
+    }
+  }
+  
+  .btn-edit-full {
+    background: $info-color;
+    color: #fff;
+    
+    &:hover {
+      background: #2563eb;
+    }
+  }
+}
+
+// 鏌ョ湅寮圭獥
+.modal-view {
+  max-width: 600px;
+}
+
+.view-body {
+  padding-top: 0;
+}
+
+.view-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.view-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  
+  &.full {
+    grid-column: 1 / -1;
+  }
+  
+  .view-label {
+    font-size: 13px;
+    color: $text-light;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .view-value {
+    font-size: 15px;
+    color: $text-primary;
+    
+    &.view-desc {
+      color: $text-secondary;
+      line-height: 1.6;
+    }
+  }
+  
+  .status-badge {
+    align-self: flex-start;
+  }
+  
+  .view-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: $radius;
+    cursor: pointer;
+    transition: transform 0.2s;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 }
 </style>
+

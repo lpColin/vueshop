@@ -201,7 +201,7 @@ export default {
         status: 1
       },
       draggingIndex: -1,
-      apiBaseUrl: 'http://192.168.1.21:5162',
+      apiBaseUrl: 'http://localhost:5162',
       // 筛选相关
       searchKeyword: '',
       statusOptions: ['全部', '启用', '禁用'],

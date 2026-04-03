@@ -1,5 +1,6 @@
 <template>
   <view class="admin-page">
+    <!-- 顶部栏 -->
     <view class="topbar">
       <view class="brand">
         <text class="brand-logo">VS</text>
@@ -13,6 +14,7 @@
     </view>
 
     <view class="layout">
+      <!-- 左侧菜单 -->
       <view v-if="!isMobile" class="sidebar">
         <view
           v-for="item in menuList"
@@ -26,7 +28,9 @@
         </view>
       </view>
 
+      <!-- 右侧内容区 -->
       <view class="content">
+        <!-- 移动端顶部菜单 -->
         <scroll-view v-if="isMobile" class="mobile-menu" scroll-x>
           <view class="mobile-menu-inner">
             <view
@@ -41,71 +45,99 @@
           </view>
         </scroll-view>
 
-        <view class="stats-grid">
-          <view v-for="card in statsCards" :key="card.key" class="stat-card" :class="card.key">
-            <view class="stat-icon">{{ card.icon }}</view>
-            <view class="stat-info">
-              <text class="stat-value">{{ card.value }}</text>
-              <text class="stat-title">{{ card.title }}</text>
+        <!-- 首页看板 -->
+        <view v-if="activeMenu === 'home'" class="page-content">
+          <view class="stats-grid">
+            <view v-for="card in statsCards" :key="card.key" class="stat-card" :class="card.key">
+              <view class="stat-icon">{{ card.icon }}</view>
+              <view class="stat-info">
+                <text class="stat-value">{{ card.value }}</text>
+                <text class="stat-title">{{ card.title }}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="module-grid">
+            <view class="card module">
+              <view class="module-head">
+                <text class="module-title">待处理</text>
+              </view>
+              <view class="todo-row clickable" v-for="todo in pendingList" :key="todo.key" @tap="onPendingClick(todo)">
+                <text class="todo-name">{{ todo.name }}</text>
+                <view class="todo-tail">
+                  <text class="todo-count">{{ todo.count }}</text>
+                  <text class="todo-arrow">›</text>
+                </view>
+              </view>
+            </view>
+
+            <view class="card module">
+              <view class="module-head">
+                <text class="module-title">热销商品</text>
+                <text class="module-more">月</text>
+              </view>
+              <view class="hot-head">
+                <text class="col name">商品名称</text>
+                <text class="col cate">分类</text>
+                <text class="col sales">销量</text>
+              </view>
+              <view class="hot-row" v-for="item in hotProducts" :key="item.key">
+                <text class="col name">{{ item.name }}</text>
+                <text class="col cate">{{ item.category }}</text>
+                <text class="col sales">{{ item.sales }}</text>
+              </view>
+            </view>
+
+            <view class="card module full-width">
+              <view class="module-head">
+                <text class="module-title">常用菜单</text>
+              </view>
+              <view class="quick-grid">
+                <view class="quick-item" v-for="item in quickMenus" :key="item.key" @tap="onMenuClick(item)">
+                  <text class="quick-icon">{{ item.icon }}</text>
+                  <text class="quick-text">{{ item.name }}</text>
+                </view>
+              </view>
+            </view>
+
+            <view class="card module full-width">
+              <view class="module-head">
+                <text class="module-title">近7日销售趋势</text>
+              </view>
+              <view class="trend-row" v-for="item in salesTrend" :key="item.day">
+                <text class="trend-day">{{ item.day }}</text>
+                <view class="trend-bar-wrap">
+                  <view class="trend-bar" :style="{ width: barWidth(item.amount) }"></view>
+                </view>
+                <text class="trend-amount">{{ item.amount }}</text>
+              </view>
             </view>
           </view>
         </view>
 
-        <view class="module-grid">
-          <view class="card module">
-            <view class="module-head">
-              <text class="module-title">待处理</text>
-            </view>
-            <view class="todo-row clickable" v-for="todo in pendingList" :key="todo.key" @tap="onPendingClick(todo)">
-              <text class="todo-name">{{ todo.name }}</text>
-              <view class="todo-tail">
-                <text class="todo-count">{{ todo.count }}</text>
-                <text class="todo-arrow">›</text>
-              </view>
-            </view>
-          </view>
+        <!-- 商家管理 -->
+        <view v-if="activeMenu === 'shop'" class="page-content">
+          <shop-management ref="shopModule" />
+        </view>
 
-          <view class="card module">
-            <view class="module-head">
-              <text class="module-title">热销商品</text>
-              <text class="module-more">月</text>
-            </view>
-            <view class="hot-head">
-              <text class="col name">商品名称</text>
-              <text class="col cate">分类</text>
-              <text class="col sales">销量</text>
-            </view>
-            <view class="hot-row" v-for="item in hotProducts" :key="item.key">
-              <text class="col name">{{ item.name }}</text>
-              <text class="col cate">{{ item.category }}</text>
-              <text class="col sales">{{ item.sales }}</text>
-            </view>
-          </view>
+        <!-- 商品分类 -->
+        <view v-if="activeMenu === 'merchant'" class="page-content">
+          <category-management ref="categoryModule" />
+        </view>
 
-          <view class="card module full-width">
-            <view class="module-head">
-              <text class="module-title">常用菜单</text>
-            </view>
-            <view class="quick-grid">
-              <view class="quick-item" v-for="item in quickMenus" :key="item.key" @tap="onMenuClick(item)">
-                <text class="quick-icon">{{ item.icon }}</text>
-                <text class="quick-text">{{ item.name }}</text>
-              </view>
-            </view>
-          </view>
+        <!-- 商品管理 -->
+        <view v-if="activeMenu === 'products'" class="page-content">
+          <product-management ref="productModule" />
+        </view>
 
-          <view class="card module full-width">
-            <view class="module-head">
-              <text class="module-title">近7日销售趋势</text>
-            </view>
-            <view class="trend-row" v-for="item in salesTrend" :key="item.day">
-              <text class="trend-day">{{ item.day }}</text>
-              <view class="trend-bar-wrap">
-                <view class="trend-bar" :style="{ width: barWidth(item.amount) }"></view>
-              </view>
-              <text class="trend-amount">{{ item.amount }}</text>
-            </view>
-          </view>
+        <!-- 订单管理 -->
+        <view v-if="activeMenu === 'orders'" class="page-content">
+          <order-management ref="orderModule" />
+        </view>
+
+        <!-- 用户管理 -->
+        <view v-if="activeMenu === 'users'" class="page-content">
+          <user-management ref="userModule" />
         </view>
       </view>
     </view>
@@ -115,8 +147,20 @@
 <script>
 import { getUserInfo } from '@/utils/auth'
 import request from '@/utils/http'
+import ShopManagement from '@/components/admin/ShopManagement.vue'
+import CategoryManagement from '@/components/admin/CategoryManagement.vue'
+import ProductManagement from '@/components/admin/ProductManagement.vue'
+import OrderManagement from '@/components/admin/OrderManagement.vue'
+import UserManagement from '@/components/admin/UserManagement.vue'
 
 export default {
+  components: {
+    ShopManagement,
+    CategoryManagement,
+    ProductManagement,
+    OrderManagement,
+    UserManagement
+  },
   data() {
     return {
       isMobile: false,
@@ -130,42 +174,27 @@ export default {
         { key: 'users', name: '用户管理', icon: '◉' }
       ],
       statsCards: [
-        { key: 's1', title: '今日销售额', value: '¥ 61688.00', icon: '¥' },
-        { key: 's2', title: '今日订单数', value: '1228', icon: '▤' },
-        { key: 's3', title: '总销售商品数', value: '285635', icon: '▣' },
-        { key: 's4', title: '总会员数', value: '455687', icon: '◉' }
+        { key: 's1', title: '今日销售额', value: '¥ 0.00', icon: '¥' },
+        { key: 's2', title: '今日订单数', value: '0', icon: '▤' },
+        { key: 's3', title: '总销售商品数', value: '0', icon: '▣' },
+        { key: 's4', title: '总会员数', value: '0', icon: '◉' }
       ],
       pendingList: [
-        { key: 'p1', name: '待付款', count: 32 },
-        { key: 'p2', name: '待发货', count: 89 },
-        { key: 'p3', name: '待收货', count: 101 },
-        { key: 'p4', name: '待解决', count: 2 },
-        { key: 'p5', name: '退换货', count: 5 }
+        { key: 'p1', name: '待付款', count: 0 },
+        { key: 'p2', name: '待发货', count: 0 },
+        { key: 'p3', name: '待收货', count: 0 },
+        { key: 'p4', name: '待解决', count: 0 },
+        { key: 'p5', name: '退换货', count: 0 }
       ],
-      hotProducts: [
-        { key: 1, name: '高端女士羊绒针织衫新品', category: '女装', sales: 1646 },
-        { key: 2, name: '秋冬款男士休闲外套加绒', category: '男装', sales: 1623 },
-        { key: 3, name: '时尚修身羽绒服保暖系列', category: '男装', sales: 1548 },
-        { key: 4, name: '新款潮流运动鞋透气跑步', category: '鞋靴', sales: 1325 },
-        { key: 5, name: '苹果手机保护壳超薄抗摔', category: '手机', sales: 1086 }
-      ],
+      hotProducts: [],
       quickMenus: [
         { key: 'products', name: '商品管理', icon: '⊕' },
         { key: 'orders', name: '订单管理', icon: '✓' },
         { key: 'shop', name: '商家管理', icon: '▦' },
         { key: 'merchant', name: '商品分类', icon: '✦' },
-        { key: 'users', name: '用户管理', icon: '◌' },
-        { key: 'user-center', name: '个人中心', icon: '↩' }
+        { key: 'users', name: '用户管理', icon: '◌' }
       ],
-      salesTrend: [
-        { day: '08/周二', amount: 1100 },
-        { day: '09/周三', amount: 1800 },
-        { day: '10/周四', amount: 560 },
-        { day: '11/周五', amount: 2000 },
-        { day: '12/周六', amount: 1150 },
-        { day: '13/周日', amount: 2900 },
-        { day: '14/周一', amount: 2200 }
-      ]
+      salesTrend: []
     }
   },
   computed: {
@@ -229,7 +258,7 @@ export default {
           }))
         }
       } catch (error) {
-        console.warn('[后台看板] 读取接口失败，使用静态预览数据', error)
+        console.warn('[后台看板] 读取接口失败', error)
       }
     },
     detectDevice() {
@@ -240,36 +269,14 @@ export default {
       const percent = Math.round((amount / this.trendMax) * 100)
       return `${percent}%`
     },
-    buildAdminUrl(key, query = '') {
-      if (key === 'users') return '/pages/admin/users'
-      if (key === 'products') return '/pages/admin/products'
-      if (key === 'shop') return '/pages/admin/shop'
-      if (key === 'merchant') return '/pages/admin/categories'
-      if (key === 'orders') return `/pages/admin/orders${query}`
-      return '/pages/admin/index'
-    },
     goUserCenter() {
       uni.switchTab({ url: '/pages/user/user' })
     },
     onPendingClick(todo) {
-      const statusMap = {
-        p1: 0,
-        p2: 1,
-        p3: 2,
-        p4: 4,
-        p5: 4
-      }
-      const status = statusMap[todo.key]
-      uni.navigateTo({ url: this.buildAdminUrl('orders', typeof status === 'number' ? `?status=${status}` : '') })
+      this.activeMenu = 'orders'
     },
     onMenuClick(item) {
       this.activeMenu = item.key
-      if (item.key === 'home') return
-      if (item.key === 'user-center') return this.goUserCenter()
-      if (['users', 'products', 'shop', 'merchant', 'orders'].includes(item.key)) {
-        return uni.navigateTo({ url: this.buildAdminUrl(item.key) })
-      }
-      uni.showToast({ title: '功能开发中', icon: 'none' })
     }
   }
 }
@@ -277,25 +284,77 @@ export default {
 
 <style lang="scss" scoped>
 .admin-page { min-height: 100vh; background: #eceef2; color: #1f2329; }
-.topbar { height: 88rpx; background: #3b3d43; color: #fff; padding: 0 28rpx; display: flex; align-items: center; justify-content: space-between; }
+
+.topbar { 
+  height: 88rpx; 
+  background: #3b3d43; 
+  color: #fff; 
+  padding: 0 28rpx; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
 .brand { display: flex; align-items: center; }
 .brand-logo { width: 42rpx; height: 42rpx; border-radius: 50%; background: #2ea7e0; text-align: center; line-height: 42rpx; font-size: 22rpx; margin-right: 12rpx; }
 .brand-title { font-size: 26rpx; font-weight: 600; }
 .topbar-user { display: flex; align-items: center; font-size: 22rpx; color: #dbe0ea; }
 .dot { margin-left: 10rpx; color: #ff5b5b; }
-.topbar-link { margin-left: 18rpx; padding: 8rpx 16rpx; border-radius: 999rpx; background: rgba(255,255,255,.12); color: #fff; }
+.topbar-link { margin-left: 18rpx; padding: 8rpx 16rpx; border-radius: 999rpx; background: rgba(255,255,255,.12); color: #fff; cursor: pointer; }
 
-.layout { display: flex; min-height: calc(100vh - 88rpx); }
-.sidebar { width: 220rpx; background: #fff; border-right: 1rpx solid #e7e8ea; }
-.menu-item { height: 78rpx; display: flex; align-items: center; padding: 0 18rpx; color: #666; font-size: 24rpx; }
+.layout { 
+  display: flex; 
+  min-height: 100vh; 
+  padding-top: 88rpx;
+}
+
+.sidebar { 
+  width: 220rpx; 
+  background: #fff; 
+  border-right: 1rpx solid #e7e8ea; 
+  position: fixed;
+  top: 88rpx;
+  left: 0;
+  bottom: 0;
+  overflow-y: auto;
+}
+
+.menu-item { 
+  height: 78rpx; 
+  display: flex; 
+  align-items: center; 
+  padding: 0 18rpx; 
+  color: #666; 
+  font-size: 24rpx; 
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-item:hover { background: #f5f7fa; }
 .menu-item.active { background: #2ea7e0; color: #fff; }
 .menu-icon { width: 34rpx; margin-right: 10rpx; }
 
-.content { flex: 1; padding: 22rpx; }
+.content { 
+  flex: 1; 
+  margin-left: 220rpx;
+  min-height: calc(100vh - 88rpx);
+}
+
 .mobile-menu { margin-bottom: 16rpx; white-space: nowrap; }
 .mobile-menu-inner { display: inline-flex; }
-.mobile-menu-item { padding: 10rpx 20rpx; margin-right: 10rpx; border-radius: 999rpx; background: #fff; border: 1rpx solid #dfe3ea; color: #666; font-size: 22rpx; }
+.mobile-menu-item { padding: 10rpx 20rpx; margin-right: 10rpx; border-radius: 999rpx; background: #fff; border: 1rpx solid #dfe3ea; color: #666; font-size: 22rpx; cursor: pointer; }
 .mobile-menu-item.active { background: #2ea7e0; color: #fff; border-color: #2ea7e0; }
+
+.page-content { 
+  padding: 22rpx; 
+  min-height: calc(100vh - 88rpx);
+  background: #eceef2;
+}
 
 .stats-grid { display: flex; flex-wrap: wrap; gap: 14rpx; }
 .stat-card { flex: 1; min-width: 260rpx; border-radius: 14rpx; padding: 18rpx 20rpx; color: #fff; display: flex; align-items: center; }
@@ -331,7 +390,8 @@ export default {
 .col.sales { width: 90rpx; text-align: right; }
 
 .quick-grid { display: flex; flex-wrap: wrap; gap: 12rpx; }
-.quick-item { width: calc(20% - 10rpx); min-width: 120rpx; height: 94rpx; border: 1rpx solid #e8ecf3; border-radius: 10rpx; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.quick-item { width: calc(20% - 10rpx); min-width: 120rpx; height: 94rpx; border: 1rpx solid #e8ecf3; border-radius: 10rpx; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; transition: all 0.2s; }
+.quick-item:hover { border-color: #2ea7e0; background: rgba(46, 167, 224, 0.05); }
 .quick-icon { font-size: 28rpx; }
 .quick-text { margin-top: 6rpx; font-size: 22rpx; color: #556070; }
 
@@ -342,7 +402,8 @@ export default {
 .trend-amount { width: 110rpx; text-align: right; color: #4b5565; font-size: 22rpx; }
 
 @media (max-width: 768px) {
-  .content { padding: 16rpx; }
+  .content { margin-left: 0; }
+  .page-content { padding: 16rpx; }
   .topbar-user { display: flex; }
   .user-name, .dot { display: none; }
   .topbar-link { margin-left: 0; font-size: 20rpx; }
