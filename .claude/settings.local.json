@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(*)",       
+      "Write(*)",      
+      "Edit(*)",      
+      "Bash(*)",       
+      "Git(*)",       
+      "Npm(*)",       
+      "Pip(*)"         
+    ],
+    "deny": [
+      "Rm(*)",         
+      "Ssh(*)"         
+    ]
+  }
+}

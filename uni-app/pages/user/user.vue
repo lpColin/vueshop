@@ -102,7 +102,7 @@
 
 <script>
 import request from '@/utils/http'
-import { getToken, getUserInfo, setUserInfo, logout } from '@/utils/auth'
+import { getToken, getUserInfo, setUserInfo, logout, normalizeUserInfo } from '@/utils/auth'
 
 export default {
   data() {
@@ -162,9 +162,9 @@ export default {
       try {
         const res = await request({ url: '/api/auth/me' })
         if (res?.data) {
-          this.userInfo = res.data
+          this.userInfo = normalizeUserInfo(res.data)
           this.hasLogin = true
-          setUserInfo(res.data)
+          setUserInfo(this.userInfo)
           this.scheduleScrollMeasure()
         }
       } catch (error) {
@@ -377,6 +377,10 @@ export default {
   border-radius: 22rpx;
   box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.04);
   border: 1rpx solid rgba(230, 67, 64, 0.05);
+}
+
+.menu-section {
+  margin: 18rpx 0 0;
 }
 
 .section-title {
