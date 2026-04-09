@@ -1,4 +1,6 @@
 uni-app/dist/
+uni-app/dist /
+dist/
 uni-app/node_modules/
 uni-app/.DS_Store
 uni-app/.idea/

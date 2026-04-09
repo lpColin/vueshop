@@ -115,52 +115,16 @@
           </view>
         </view>
 
-        <!-- 商家管理 -->
-        <view v-if="activeMenu === 'shop'" class="page-content">
-          <shop-management ref="shopModule" />
-        </view>
-
-        <!-- 商品分类 -->
-        <view v-if="activeMenu === 'merchant'" class="page-content">
-          <category-management ref="categoryModule" />
-        </view>
-
-        <!-- 商品管理 -->
-        <view v-if="activeMenu === 'products'" class="page-content">
-          <product-management ref="productModule" />
-        </view>
-
-        <!-- 订单管理 -->
-        <view v-if="activeMenu === 'orders'" class="page-content">
-          <order-management ref="orderModule" />
-        </view>
-
-        <!-- 用户管理 -->
-        <view v-if="activeMenu === 'users'" class="page-content">
-          <user-management ref="userModule" />
-        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script>
-import { getUserInfo } from '@/utils/auth'
+import { getUserInfo, isAdminUser } from '@/utils/auth'
 import request from '@/utils/http'
-import ShopManagement from '@/components/admin/ShopManagement.vue'
-import CategoryManagement from '@/components/admin/CategoryManagement.vue'
-import ProductManagement from '@/components/admin/ProductManagement.vue'
-import OrderManagement from '@/components/admin/OrderManagement.vue'
-import UserManagement from '@/components/admin/UserManagement.vue'
 
 export default {
-  components: {
-    ShopManagement,
-    CategoryManagement,
-    ProductManagement,
-    OrderManagement,
-    UserManagement
-  },
   data() {
     return {
       isMobile: false,
@@ -209,7 +173,7 @@ export default {
   },
   onShow() {
     const user = getUserInfo()
-    if (!user || user.role !== 'admin') {
+    if (!user || !isAdminUser(user)) {
       uni.showToast({ title: '仅管理员可访问', icon: 'none' })
       setTimeout(() => {
         uni.switchTab({ url: '/pages/user/user' })
@@ -273,10 +237,26 @@ export default {
       uni.switchTab({ url: '/pages/user/user' })
     },
     onPendingClick(todo) {
-      this.activeMenu = 'orders'
+      uni.navigateTo({ url: '/pages/admin/orders' })
     },
     onMenuClick(item) {
-      this.activeMenu = item.key
+      if (item.key === 'home') {
+        this.activeMenu = 'home'
+        return
+      }
+
+      const routeMap = {
+        shop: '/pages/admin/shop',
+        merchant: '/pages/admin/categories',
+        products: '/pages/admin/products',
+        orders: '/pages/admin/orders',
+        users: '/pages/admin/users'
+      }
+
+      const url = routeMap[item.key]
+      if (url) {
+        uni.navigateTo({ url })
+      }
     }
   }
 }

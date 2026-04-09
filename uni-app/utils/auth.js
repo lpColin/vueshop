@@ -1,8 +1,22 @@
 const TOKEN_KEY = 'token'
 const USER_KEY = 'userInfo'
 
+export function normalizeRole(role, fallback = 'user') {
+  if (typeof role === 'string') {
+    const normalized = role.trim().toLowerCase()
+    if (normalized) return normalized
+  }
+
+  if (role === true) return 'admin'
+  if (role === false) return fallback
+
+  return fallback
+}
+
 export function normalizeUserInfo(user) {
   if (!user) return null
+  const rawRole = user.role ?? user.Role ?? user.userRole ?? user.UserRole ?? user.roleName ?? user.RoleName
+  const isAdminFlag = user.isAdmin ?? user.IsAdmin
   return {
     ...user,
     id: user.id ?? user.Id ?? '',
@@ -10,9 +24,14 @@ export function normalizeUserInfo(user) {
     nickname: user.nickname ?? user.Nickname ?? '',
     avatar: user.avatar ?? user.Avatar ?? '',
     phone: user.phone ?? user.Phone ?? '',
-    role: user.role ?? user.Role ?? 'user',
+    role: normalizeRole(rawRole, isAdminFlag ? 'admin' : 'user'),
     shopId: user.shopId ?? user.ShopId ?? null
   }
+}
+
+export function isAdminUser(user) {
+  const fallbackRole = user?.isAdmin || user?.IsAdmin ? 'admin' : 'user'
+  return normalizeRole(user?.role ?? user?.Role, fallbackRole) === 'admin'
 }
 
 export function getToken() {

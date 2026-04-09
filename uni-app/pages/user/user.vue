@@ -57,16 +57,17 @@
           </view>
         </view>
       </view>
+
     </view>
 
-    <scroll-view class="page-body with-fixed-hero menu-scroll" :scroll-y="isMenuScrollable" show-scrollbar="false">
+    <scroll-view class="page-body with-fixed-hero menu-scroll" :style="pageBodyStyle" :scroll-y="isMenuScrollable" show-scrollbar="false">
       <view class="menu-scroll-inner">
         <view class="menu-transition">
           <view class="menu-transition-line"></view>
         </view>
 
         <view class="section menu-section">
-          <view class="menu-row" v-if="hasLogin && userInfo.role === 'admin'" @tap="goAdmin">
+          <view class="menu-row" v-if="showAdminEntry" @tap="goAdmin">
             <view class="left"><view class="menu-icon setting"></view><text class="label">后台管理</text></view>
             <text class="arrow">›</text>
           </view>
@@ -102,7 +103,7 @@
 
 <script>
 import request from '@/utils/http'
-import { getToken, getUserInfo, setUserInfo, logout, normalizeUserInfo } from '@/utils/auth'
+import { getToken, getUserInfo, setUserInfo, logout, normalizeUserInfo, isAdminUser } from '@/utils/auth'
 
 export default {
   data() {
@@ -114,7 +115,18 @@ export default {
         role: 'user'
       },
       hasLogin: false,
-      isMenuScrollable: false
+      isMenuScrollable: false,
+      pageBodyTop: 250
+    }
+  },
+  computed: {
+    showAdminEntry() {
+      return this.hasLogin && isAdminUser(this.userInfo)
+    },
+    pageBodyStyle() {
+      return {
+        top: `${this.pageBodyTop}px`
+      }
     }
   },
   onShow() {
@@ -128,18 +140,36 @@ export default {
   methods: {
     scheduleScrollMeasure() {
       setTimeout(() => {
-        this.updateMenuScrollState()
+        this.updateLayoutMetrics()
       }, 80)
     },
-    updateMenuScrollState() {
+    updateLayoutMetrics() {
       const query = uni.createSelectorQuery().in(this)
+      query.select('.order-section').boundingClientRect()
       query.select('.menu-scroll').boundingClientRect()
       query.select('.menu-scroll-inner').boundingClientRect()
       query.exec((res) => {
-        const wrapRect = res && res[0]
-        const contentRect = res && res[1]
-        if (!wrapRect || !contentRect) return
-        this.isMenuScrollable = contentRect.height > wrapRect.height + 2
+        const orderRect = res && res[0]
+        const wrapRect = res && res[1]
+        const contentRect = res && res[2]
+
+        if (orderRect && typeof orderRect.bottom === 'number') {
+          this.pageBodyTop = Math.max(orderRect.bottom + 4, 220)
+        }
+
+        this.$nextTick(() => {
+          const nextQuery = uni.createSelectorQuery().in(this)
+          nextQuery.select('.menu-scroll').boundingClientRect()
+          nextQuery.select('.menu-scroll-inner').boundingClientRect()
+          nextQuery.exec((nextRes) => {
+            const nextWrapRect = nextRes && nextRes[0]
+            const nextContentRect = nextRes && nextRes[1]
+            const finalWrapRect = nextWrapRect || wrapRect
+            const finalContentRect = nextContentRect || contentRect
+            if (!finalWrapRect || !finalContentRect) return
+            this.isMenuScrollable = finalContentRect.height > finalWrapRect.height + 2
+          })
+        })
       })
     },
     loadUserInfo() {
@@ -255,7 +285,7 @@ export default {
 .menu-transition {
   display: flex;
   justify-content: center;
-  padding: 8rpx 0 10rpx;
+  padding: 2rpx 0 4rpx;
 }
 
 .menu-transition-line {
@@ -380,7 +410,7 @@ export default {
 }
 
 .menu-section {
-  margin: 18rpx 0 0;
+  margin: 8rpx 0 0;
 }
 
 .section-title {
